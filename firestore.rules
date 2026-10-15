@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /m2_licenses/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.signature is string
+        && request.resource.data.signature.size() == 64
+        && request.resource.data.fingerprint == id
+        && request.resource.data.tier in ['basic', 'complete'];
+      allow delete: if false;
+    }
+    match /m2_devices/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.fingerprint == id;
+      allow delete: if false;
+    }
+    match /m2_releases/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /m2optimizer/{id} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /DMA/{id} {
+      allow read, write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
