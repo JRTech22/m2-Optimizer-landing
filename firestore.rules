@@ -9,6 +9,18 @@ service cloud.firestore {
         && request.resource.data.tier in ['basic', 'complete'];
       allow delete: if false;
     }
+    match /m2_promos/{id} {
+      allow read: if true;
+      allow create, update: if request.resource.data.code == id
+        && request.resource.data.tier in ['basic', 'complete']
+        && request.resource.data.signature is string
+        && request.resource.data.signature.size() == 64;
+      allow delete: if false;
+      match /uses/{fingerprint} {
+        allow read, create: if true;
+        allow update, delete: if false;
+      }
+    }
     match /m2_devices/{id} {
       allow read: if true;
       allow create, update: if request.resource.data.fingerprint == id;

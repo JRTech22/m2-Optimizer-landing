@@ -22,7 +22,34 @@ export interface Copy {
   theme: { toLight: string; toDark: string }
   langLabel: string
   pages: Record<'home' | 'pricing' | 'help' | 'terms' | 'privacy' | 'contact' | 'missing', { title: string; lede: string; blocks: Block[] }>
-  pricing: { email: string; device: string; pay: string; basic: string; complete: string; missingDevice: string; paid: string; reused: string; partial: string }
+  pricing: {
+    email: string
+    device: string
+    pay: string
+    basic: string
+    complete: string
+    missingDevice: string
+    paid: string
+    reused: string
+    partial: string
+    year: string
+    popular: string
+    choose: string
+    promoTitle: string
+    promoLead: string
+    promoAction: string
+    promoBusy: string
+    promoNeed: string
+    promoMissing: string
+    promoUsed: string
+    promoEmpty: string
+    promoInvalid: string
+    promoCovered: string
+    promoDone: string
+    promoCongrats: string
+    promoClose: string
+    promoDays: string
+  }
 }
 
 const shared = {
@@ -67,7 +94,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Precios',
-        lede: 'Un año desde el pago confirmado. La huella del equipo viaja con el pedido para que la app de escritorio reconozca la licencia.',
+        lede: 'Un año desde el pago confirmado. La huella del equipo viaja con el pedido. Si tienes un código, canjéalo aquí.',
         blocks: [
           { heading: 'Básica · 4,99 USD', body: 'Análisis, historial en solo lectura, relojes, desactivar programas del inicio y cambiar el plan de energía.' },
           { heading: 'Completa · 19,99 USD', body: 'Todo el catálogo: temporales, papelera, cierre de apps, desinstalación de basura, rutina automática, widgets de sensores y modo encima de juegos.' },
@@ -121,6 +148,23 @@ export const COPY: Record<Lang, Copy> = {
       paid: 'Pago confirmado. Vuelve a la app: Ajustes mostrará la licencia.',
       reused: 'Esta compra ya tiene una licencia vigente. Quedó activada en este equipo, sin un cobro nuevo.',
       partial: 'La licencia básica vigente quedó en este equipo. La completa sigue siendo una compra nueva.',
+      year: '1 año',
+      popular: 'Más elegida',
+      choose: 'Elegir',
+      promoTitle: '¿Tienes un código promocional?',
+      promoLead: 'Canjéalo y la licencia queda activa en este equipo. Cada PC puede usarlo una sola vez.',
+      promoAction: 'Canjear',
+      promoBusy: 'Canjeando…',
+      promoNeed: 'Escribe el correo. La huella tiene que llegar desde la app.',
+      promoMissing: 'Ese código no existe. Revísalo e inténtalo otra vez.',
+      promoUsed: 'Este equipo ya usó ese código.',
+      promoEmpty: 'Este código ya se agotó: no le quedan usos.',
+      promoInvalid: 'Este código no es válido.',
+      promoCovered: 'Este equipo ya tiene una licencia que cubre ese código.',
+      promoDone: '¡Código canjeado!',
+      promoCongrats: 'La licencia quedó activa en este equipo.',
+      promoClose: 'Listo',
+      promoDays: 'días',
     },
   },
   en: {
@@ -137,7 +181,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Pricing',
-        lede: 'One year from the confirmed payment. The PC fingerprint travels with the order so the desktop app can recognize the license.',
+        lede: 'One year from the confirmed payment. The PC fingerprint travels with the order. If you have a code, redeem it here.',
         blocks: [
           { heading: 'Basic · 4.99 USD', body: 'Analysis, read-only history, clocks, disabling startup programs and changing the power plan.' },
           { heading: 'Complete · 19.99 USD', body: 'The full catalog: temp files, recycle bin, closing apps, junk uninstall, automation, sensor widgets and game overlay.' },
@@ -191,6 +235,23 @@ export const COPY: Record<Lang, Copy> = {
       paid: 'Payment confirmed. Return to the app: Settings will show the license.',
       reused: 'This purchase already has an active license. It is on this PC now, with no new charge.',
       partial: 'The active Basic license is on this PC. Complete is still a new purchase.',
+      year: '1 year',
+      popular: 'Most chosen',
+      choose: 'Choose',
+      promoTitle: 'Have a promo code?',
+      promoLead: 'Redeem it and the license turns on for this PC. Each PC can use it only once.',
+      promoAction: 'Redeem',
+      promoBusy: 'Redeeming…',
+      promoNeed: 'Enter the email. The fingerprint has to come from the app.',
+      promoMissing: 'That code does not exist. Check it and try again.',
+      promoUsed: 'This PC already used that code.',
+      promoEmpty: 'This code is used up.',
+      promoInvalid: 'This code is not valid.',
+      promoCovered: 'This PC already has a license that covers that code.',
+      promoDone: 'Code redeemed',
+      promoCongrats: 'The license is active on this PC.',
+      promoClose: 'Done',
+      promoDays: 'days',
     },
   },
   fr: {
@@ -207,7 +268,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Tarifs',
-        lede: 'Un an à partir du paiement confirmé. L’empreinte du PC voyage avec la commande pour que l’app de bureau reconnaisse la licence.',
+        lede: 'Un an à partir du paiement confirmé. L’empreinte du PC voyage avec la commande. Un code se réclame ici.',
         blocks: [
           { heading: 'Basique · 4,99 USD', body: 'Analyse, historique en lecture seule, horloges, désactivation des programmes au démarrage et plan d’alimentation.' },
           { heading: 'Complète · 19,99 USD', body: 'Tout le catalogue : fichiers temporaires, corbeille, fermeture d’apps, désinstallation des indésirables, routine, widgets capteurs et mode jeu.' },
@@ -261,6 +322,23 @@ export const COPY: Record<Lang, Copy> = {
       paid: 'Paiement confirmé. Revenez à l’app : Paramètres affichera la licence.',
       reused: 'Cet achat a déjà une licence en cours. Elle est sur ce PC, sans nouveau paiement.',
       partial: 'La licence basique en cours est sur ce PC. La complète reste un nouvel achat.',
+      year: '1 an',
+      popular: 'La plus choisie',
+      choose: 'Choisir',
+      promoTitle: 'Vous avez un code promo ?',
+      promoLead: 'Réclamez-le et la licence s’active sur ce PC. Chaque PC ne peut l’utiliser qu’une fois.',
+      promoAction: 'Réclamer',
+      promoBusy: 'Réclamation…',
+      promoNeed: 'Écrivez le courriel. L’empreinte doit venir de l’app.',
+      promoMissing: 'Ce code n’existe pas. Vérifiez-le et réessayez.',
+      promoUsed: 'Ce PC a déjà utilisé ce code.',
+      promoEmpty: 'Ce code est épuisé.',
+      promoInvalid: 'Ce code n’est pas valide.',
+      promoCovered: 'Ce PC a déjà une licence qui couvre ce code.',
+      promoDone: 'Code réclamé',
+      promoCongrats: 'La licence est active sur ce PC.',
+      promoClose: 'OK',
+      promoDays: 'jours',
     },
   },
   pt: {
@@ -277,7 +355,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Preços',
-        lede: 'Um ano a partir do pagamento confirmado. A impressão do PC vai com o pedido para o app reconhecer a licença.',
+        lede: 'Um ano a partir do pagamento confirmado. A impressão do PC vai com o pedido. Se tiver um código, resgate aqui.',
         blocks: [
           { heading: 'Básica · 4,99 USD', body: 'Análise, histórico só de leitura, relógios, desativar programas da inicialização e mudar o plano de energia.' },
           { heading: 'Completa · 19,99 USD', body: 'O catálogo inteiro: temporários, lixeira, fechar apps, desinstalar lixo, rotina, widgets de sensores e modo sobre os jogos.' },
@@ -331,6 +409,23 @@ export const COPY: Record<Lang, Copy> = {
       paid: 'Pagamento confirmado. Volte ao app: Configurações mostrará a licença.',
       reused: 'Esta compra já tem uma licença vigente. Ficou neste PC, sem uma nova cobrança.',
       partial: 'A licença básica vigente ficou neste PC. A completa continua sendo uma compra nova.',
+      year: '1 ano',
+      popular: 'Mais escolhida',
+      choose: 'Escolher',
+      promoTitle: 'Tem um código promocional?',
+      promoLead: 'Resgate e a licença fica ativa neste PC. Cada PC só pode usar uma vez.',
+      promoAction: 'Resgatar',
+      promoBusy: 'Resgatando…',
+      promoNeed: 'Escreva o e-mail. A impressão tem de vir do app.',
+      promoMissing: 'Esse código não existe. Confira e tente de novo.',
+      promoUsed: 'Este PC já usou esse código.',
+      promoEmpty: 'Esse código esgotou.',
+      promoInvalid: 'Esse código não é válido.',
+      promoCovered: 'Este PC já tem uma licença que cobre esse código.',
+      promoDone: 'Código resgatado',
+      promoCongrats: 'A licença ficou ativa neste PC.',
+      promoClose: 'Pronto',
+      promoDays: 'dias',
     },
   },
 }

@@ -29,6 +29,14 @@ interface DeviceRow {
   version: string
 }
 
+interface PromoRow {
+  code: string
+  tier: string
+  maxUses: number
+  used: number
+  createdAt: string
+}
+
 interface AdminData {
   catalog: Catalog
   storeUrl: string
@@ -36,6 +44,7 @@ interface AdminData {
   appInstallerUrl: string
   licenses: LicenseRow[]
   devices: DeviceRow[]
+  promos: PromoRow[]
 }
 
 function shortId(value: string): string {
@@ -51,6 +60,8 @@ export function DmaPanel() {
   const [data, setData] = useState<AdminData | null>(null)
   const [version, setVersion] = useState('')
   const [url, setUrl] = useState('')
+  const [promoTier, setPromoTier] = useState<'basic' | 'complete'>('complete')
+  const [promoUses, setPromoUses] = useState('10')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -110,6 +121,29 @@ export function DmaPanel() {
         return
       }
       setNotice(body.storeUrl ? `Publicada. Microsoft Store: ${body.storeUrl}` : 'Publicada.')
+      await load()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function createPromo(event: FormEvent) {
+    event.preventDefault()
+    setError('')
+    setNotice('')
+    setBusy(true)
+    try {
+      const response = await fetch('/api/dma/promo', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tier: promoTier, maxUses: Number(promoUses) }),
+      })
+      const body = (await response.json()) as { error?: string; promo?: { code: string } }
+      if (!response.ok || !body.promo) {
+        setError(body.error ?? 'No se creó el código')
+        return
+      }
+      setNotice(`Código ${body.promo.code} listo. Cada PC puede usarlo una sola vez.`)
       await load()
     } finally {
       setBusy(false)
@@ -227,6 +261,54 @@ export function DmaPanel() {
           </tbody>
         </table>
       </div>
+      <form className="card dma-card" onSubmit={(event) => void createPromo(event)}>
+        <h2>Códigos promocionales</h2>
+        <label>
+          Licencia
+          <select value={promoTier} onChange={(event) => setPromoTier(event.target.value === 'basic' ? 'basic' : 'complete')}>
+            <option value="complete">Completa · 1 año</option>
+            <option value="basic">Básica · 1 año</option>
+          </select>
+        </label>
+        <label>
+          Usos totales
+          <input
+            value={promoUses}
+            onChange={(event) => setPromoUses(event.target.value.replace(/\D/g, '').slice(0, 3))}
+            inputMode="numeric"
+            required
+          />
+        </label>
+        <p>El código se genera solo. Cada equipo puede canjearlo una única vez, aunque queden usos.</p>
+        <button className="btn btn-primary" type="submit" disabled={busy}>
+          Generar código
+        </button>
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Licencia</th>
+              <th>Usos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.promos.map((item) => (
+              <tr key={item.code}>
+                <td>
+                  <button type="button" className="linkish" onClick={() => void copy(item.code)}>{item.code}</button>
+                </td>
+                <td>{item.tier === 'complete' ? 'Completa' : 'Básica'}</td>
+                <td>{item.used}/{item.maxUses}</td>
+              </tr>
+            ))}
+            {data.promos.length === 0 && (
+              <tr>
+                <td colSpan={3}>Todavía no hay códigos.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </form>
       <div className="card dma-card">
         <h2>Licencias</h2>
         <table>

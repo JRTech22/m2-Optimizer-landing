@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Article } from '@/components/article'
+import { PromoCelebrate } from '@/components/promo-celebrate'
 import { usePrefs } from '@/components/shell'
 import { COPY } from '@/lib/copy'
+import { maskPromo, promoReady } from '@/lib/promo-code'
 import { PAYPAL_CLIENT_ID } from '@/lib/paypal-public'
 
 interface PayPalButtons {
@@ -24,14 +25,57 @@ export function Pricing() {
   const params = useSearchParams()
   const { lang } = usePrefs()
   const copy = COPY[lang].pricing
+  const page = COPY[lang].pages.pricing
   const initialTier = params.get('tier') === 'basic' ? 'basic' : 'complete'
   const fromApp = params.get('device') ?? ''
   const device = /^[a-f0-9]{64}$/.test(fromApp) ? fromApp : ''
   const [tier, setTier] = useState<'basic' | 'complete'>(initialTier)
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [promoError, setPromoError] = useState('')
   const [covered, setCovered] = useState(false)
+  const [code, setCode] = useState('')
+  const [shake, setShake] = useState(0)
+  const [redeeming, setRedeeming] = useState(false)
+  const [won, setWon] = useState<{ tier: 'basic' | 'complete'; expiresAt: string; code: string } | null>(null)
   const ready = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && device.length === 64
+  const promoMessages = {
+    missing: copy.promoMissing,
+    used: copy.promoUsed,
+    empty: copy.promoEmpty,
+    invalid: copy.promoInvalid,
+    covered: copy.promoCovered,
+  }
+
+  async function redeem(event: FormEvent) {
+    event.preventDefault()
+    if (!promoReady(code) || redeeming) return
+    if (!ready) {
+      setPromoError(copy.promoNeed)
+      setShake((value) => value + 1)
+      return
+    }
+    setRedeeming(true)
+    setPromoError('')
+    try {
+      const response = await fetch('/api/promo/redeem', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code, fingerprint: device, email }),
+      })
+      const body = (await response.json()) as { error?: keyof typeof promoMessages; tier?: 'basic' | 'complete'; expiresAt?: string; code?: string }
+      if (!response.ok || !body.tier || !body.expiresAt) {
+        setPromoError(promoMessages[body.error ?? 'invalid'] ?? copy.promoInvalid)
+        setShake((value) => value + 1)
+        return
+      }
+      setCovered(true)
+      setCode('')
+      setWon({ tier: body.tier, expiresAt: body.expiresAt, code: body.code ?? code })
+    } finally {
+      setRedeeming(false)
+    }
+  }
 
   useEffect(() => {
     if (!ready) {
@@ -118,46 +162,107 @@ export function Pricing() {
     }
   }, [ready, covered, tier, device, email, copy.paid, copy.reused])
 
+  const plans = [
+    { id: 'basic' as const, name: copy.basic, price: '4,99', body: page.blocks[0]?.body ?? '' },
+    { id: 'complete' as const, name: copy.complete, price: '19,99', body: page.blocks[1]?.body ?? '' },
+  ]
+
   return (
     <>
-      <Article id="pricing" />
-      <form className="pay card" onSubmit={(event) => event.preventDefault()}>
-        <label>
-          {copy.email}
-          <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
-        </label>
-        <label>
-          {copy.device}
-          <input
-            className="device-lock"
-            value={device}
-            readOnly
-            tabIndex={-1}
-            spellCheck={false}
-            autoComplete="off"
-            aria-readonly="true"
-            onChange={() => undefined}
-            onCopy={(event) => event.preventDefault()}
-            onCut={(event) => event.preventDefault()}
-            onPaste={(event) => event.preventDefault()}
-            onDrop={(event) => event.preventDefault()}
-            onKeyDown={(event) => event.preventDefault()}
-            onContextMenu={(event) => event.preventDefault()}
-          />
-        </label>
-        {device.length === 0 && <p>{copy.missingDevice}</p>}
-        <div className="tiers">
-          <button type="button" aria-pressed={tier === 'basic'} onClick={() => setTier('basic')}>
-            {copy.basic} · 4,99 USD
-          </button>
-          <button type="button" aria-pressed={tier === 'complete'} onClick={() => setTier('complete')}>
-            {copy.complete} · 19,99 USD
-          </button>
+      <section className="shop">
+        <header className="shop-hero">
+          <div className="wrap">
+            <p className="eyebrow">M2 Optimizer</p>
+            <h1>{page.title}</h1>
+            <p className="lede">{page.lede}</p>
+          </div>
+        </header>
+        <div className="wrap license-grid">
+          {plans.map((plan) => (
+            <button
+              key={plan.id}
+              type="button"
+              className={tier === plan.id ? 'plan-card picked' : 'plan-card'}
+              aria-pressed={tier === plan.id}
+              onClick={() => setTier(plan.id)}
+            >
+              {plan.id === 'complete' && <span className="plan-flag">{copy.popular}</span>}
+              <span className="plan-name">{plan.name}</span>
+              <span className="plan-price">
+                {plan.price} <small>USD</small>
+              </span>
+              <span className="plan-year">{copy.year}</span>
+              <span className="plan-body">{plan.body}</span>
+              <span className="plan-choose">{copy.choose}</span>
+            </button>
+          ))}
         </div>
-        {!covered && <p>{copy.pay}</p>}
-        {!covered && <div id="paypal-button" />}
-        {message && <p>{message}</p>}
-      </form>
+        <form className="wrap shop-pay card" onSubmit={(event) => event.preventDefault()}>
+          <label>
+            {copy.email}
+            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
+          </label>
+          <label>
+            {copy.device}
+            <input
+              className="device-lock"
+              value={device}
+              readOnly
+              tabIndex={-1}
+              spellCheck={false}
+              autoComplete="off"
+              aria-readonly="true"
+              onChange={() => undefined}
+              onCopy={(event) => event.preventDefault()}
+              onCut={(event) => event.preventDefault()}
+              onPaste={(event) => event.preventDefault()}
+              onDrop={(event) => event.preventDefault()}
+              onKeyDown={(event) => event.preventDefault()}
+              onContextMenu={(event) => event.preventDefault()}
+            />
+          </label>
+          {device.length === 0 && <p>{copy.missingDevice}</p>}
+          {!covered && <p className="pay-label">{copy.pay}</p>}
+          {!covered && <div id="paypal-button" />}
+          {message && <p className="pay-note">{message}</p>}
+        </form>
+        <form className="wrap promo-card card" onSubmit={(event) => void redeem(event)}>
+          <div>
+            <h2>{copy.promoTitle}</h2>
+            <p>{copy.promoLead}</p>
+          </div>
+          <div key={shake} className={shake > 0 ? 'promo-entry promo-temblor' : 'promo-entry'}>
+            <input
+              value={code}
+              onChange={(event) => {
+                setCode(maskPromo(event.target.value))
+                setPromoError('')
+              }}
+              placeholder="XX-XXXX-XXXX"
+              aria-label={copy.promoTitle}
+              spellCheck={false}
+              autoComplete="off"
+              maxLength={12}
+            />
+            <button className="btn btn-primary" type="submit" disabled={!promoReady(code) || redeeming}>
+              {redeeming ? copy.promoBusy : copy.promoAction}
+            </button>
+          </div>
+          {promoError && <p className="promo-error">{promoError}</p>}
+        </form>
+      </section>
+      {won && (
+        <PromoCelebrate
+          tierName={won.tier === 'basic' ? copy.basic : copy.complete}
+          expiresAt={won.expiresAt}
+          code={won.code}
+          title={copy.promoDone}
+          lead={copy.promoCongrats}
+          daysLabel={copy.promoDays}
+          closeLabel={copy.promoClose}
+          onClose={() => setWon(null)}
+        />
+      )}
     </>
   )
 }

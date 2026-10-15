@@ -14,6 +14,10 @@ export function signLicense(fingerprint: string, tier: string, expiresAt: string
   return createHmac('sha256', PAYPAL_SECRET).update(`${fingerprint}|${tier}|${expiresAt}|${orderId}`).digest('hex')
 }
 
+export function signPromo(code: string, tier: string, maxUses: number, used: number, createdAt: string): string {
+  return createHmac('sha256', PAYPAL_SECRET).update(`promo|${code}|${tier}|${maxUses}|${used}|${createdAt}`).digest('hex')
+}
+
 export function signDma(payload: string): string {
   return createHmac('sha256', PAYPAL_SECRET).update(payload).digest('hex')
 }

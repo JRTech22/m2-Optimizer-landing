@@ -1,9 +1,10 @@
 import 'server-only'
 
 import { getApps, initializeApp } from 'firebase/app'
-import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, query, setDoc, where } from 'firebase/firestore'
+import { randomBytes } from 'node:crypto'
+import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, query, runTransaction, setDoc, where } from 'firebase/firestore'
 import { firebaseConfig } from '@/lib/firebase-public'
-import { signLicense, verifyLicense, type PaidTier } from '@/server/paypal'
+import { signLicense, signPromo, verifyLicense, type PaidTier } from '@/server/paypal'
 
 export interface LicenseRecord {
   email: string
@@ -276,4 +277,150 @@ export async function publishRelease(version: string, url: string): Promise<Cata
     await setDoc(doc(webDb(), 'm2optimizer', RELEASE_DOC), payload, { merge: true })
   }
   return { version, url, versions }
+}
+
+const PROMO_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+export type PromoReason = 'missing' | 'used' | 'empty' | 'invalid' | 'covered'
+
+export class PromoError extends Error {
+  constructor(readonly reason: PromoReason) {
+    super(reason)
+  }
+}
+
+export interface PromoRecord {
+  code: string
+  tier: PaidTier
+  maxUses: number
+  used: number
+  createdAt: string
+}
+
+function mintCode(): string {
+  const chars = [...randomBytes(10)].map((byte) => PROMO_ALPHABET[byte % PROMO_ALPHABET.length])
+  return `${chars.slice(0, 2).join('')}-${chars.slice(2, 6).join('')}-${chars.slice(6).join('')}`
+}
+
+function asPromo(id: string, data: Record<string, unknown> | undefined): (PromoRecord & { signature: string }) | null {
+  if (!data || data.code !== id) return null
+  if (data.tier !== 'basic' && data.tier !== 'complete') return null
+  if (typeof data.createdAt !== 'string' || typeof data.signature !== 'string') return null
+  const maxUses = Number(data.maxUses)
+  const used = Number(data.used)
+  if (!Number.isInteger(maxUses) || maxUses < 1 || !Number.isInteger(used) || used < 0) return null
+  const record = { code: id, tier: data.tier as PaidTier, maxUses, used, createdAt: data.createdAt, signature: data.signature }
+  if (signPromo(record.code, record.tier, record.maxUses, record.used, record.createdAt) !== record.signature) return null
+  return record
+}
+
+function yearFromNow(): string {
+  const expires = new Date()
+  expires.setUTCFullYear(expires.getUTCFullYear() + 1)
+  return expires.toISOString()
+}
+
+export async function createPromo(tier: PaidTier, maxUses: number): Promise<PromoRecord> {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const code = mintCode()
+    const createdAt = new Date().toISOString()
+    const signature = signPromo(code, tier, maxUses, 0, createdAt)
+    const record = { code, tier, maxUses, used: 0, createdAt, signature }
+    const admin = await adminDb()
+    if (admin) {
+      const ref = admin.collection('m2_promos').doc(code)
+      if ((await ref.get()).exists) continue
+      await ref.set(record)
+      return { code, tier, maxUses, used: 0, createdAt }
+    }
+    const ref = doc(webDb(), 'm2_promos', code)
+    if ((await getDoc(ref)).exists()) continue
+    await setDoc(ref, record)
+    return { code, tier, maxUses, used: 0, createdAt }
+  }
+  throw new Error('No se pudo generar un código')
+}
+
+export async function listPromos(): Promise<PromoRecord[]> {
+  const admin = await adminDb()
+  const rows = admin
+    ? (await admin.collection('m2_promos').limit(40).get()).docs.map((item) => ({ id: item.id, data: item.data() as Record<string, unknown> }))
+    : (await getDocs(query(collection(webDb(), 'm2_promos'), limit(40)))).docs.map((item) => ({ id: item.id, data: item.data() as Record<string, unknown> }))
+  return rows.flatMap((row) => {
+    const promo = asPromo(row.id, row.data)
+    return promo ? [{ code: promo.code, tier: promo.tier, maxUses: promo.maxUses, used: promo.used, createdAt: promo.createdAt }] : []
+  })
+}
+
+export async function redeemPromo(code: string, fingerprint: string, email: string): Promise<{ tier: PaidTier; expiresAt: string }> {
+  const admin = await adminDb()
+  if (admin) return redeemPromoAdmin(admin, code, fingerprint, email)
+  return redeemPromoWeb(code, fingerprint, email)
+}
+
+async function redeemPromoAdmin(
+  admin: NonNullable<Awaited<ReturnType<typeof adminDb>>>,
+  code: string,
+  fingerprint: string,
+  email: string,
+): Promise<{ tier: PaidTier; expiresAt: string }> {
+  return admin.runTransaction(async (tx) => {
+    const ref = admin.collection('m2_promos').doc(code)
+    const useRef = ref.collection('uses').doc(fingerprint)
+    const licenseRef = admin.collection('m2_licenses').doc(fingerprint)
+    const promoSnap = await tx.get(ref)
+    const useSnap = await tx.get(useRef)
+    const licenseSnap = await tx.get(licenseRef)
+    const promo = asPromo(code, promoSnap.data() as Record<string, unknown> | undefined)
+    if (!promo) throw new PromoError('missing')
+    if (useSnap.exists) throw new PromoError('used')
+    if (promo.used >= promo.maxUses) throw new PromoError('empty')
+    const current = asLicense(fingerprint, licenseSnap.data() as Record<string, unknown> | undefined)
+    if (current && covers(current.tier, promo.tier)) throw new PromoError('covered')
+    const used = promo.used + 1
+    const expiresAt = yearFromNow()
+    const orderId = `promo:${code}`
+    tx.set(ref, { ...promo, used, signature: signPromo(code, promo.tier, promo.maxUses, used, promo.createdAt) })
+    tx.set(useRef, { fingerprint, email, at: new Date().toISOString() })
+    tx.set(licenseRef, {
+      email,
+      tier: promo.tier,
+      expiresAt,
+      fingerprint,
+      orderId,
+      signature: signLicense(fingerprint, promo.tier, expiresAt, orderId),
+    })
+    return { tier: promo.tier, expiresAt }
+  })
+}
+
+async function redeemPromoWeb(code: string, fingerprint: string, email: string): Promise<{ tier: PaidTier; expiresAt: string }> {
+  const db = webDb()
+  return runTransaction(db, async (tx) => {
+    const ref = doc(db, 'm2_promos', code)
+    const useRef = doc(db, 'm2_promos', code, 'uses', fingerprint)
+    const licenseRef = doc(db, 'm2_licenses', fingerprint)
+    const promoSnap = await tx.get(ref)
+    const useSnap = await tx.get(useRef)
+    const licenseSnap = await tx.get(licenseRef)
+    const promo = asPromo(code, promoSnap.data() as Record<string, unknown> | undefined)
+    if (!promo) throw new PromoError('missing')
+    if (useSnap.exists()) throw new PromoError('used')
+    if (promo.used >= promo.maxUses) throw new PromoError('empty')
+    const current = asLicense(fingerprint, licenseSnap.data() as Record<string, unknown> | undefined)
+    if (current && covers(current.tier, promo.tier)) throw new PromoError('covered')
+    const used = promo.used + 1
+    const expiresAt = yearFromNow()
+    const orderId = `promo:${code}`
+    tx.set(ref, { ...promo, used, signature: signPromo(code, promo.tier, promo.maxUses, used, promo.createdAt) })
+    tx.set(useRef, { fingerprint, email, at: new Date().toISOString() })
+    tx.set(licenseRef, {
+      email,
+      tier: promo.tier,
+      expiresAt,
+      fingerprint,
+      orderId,
+      signature: signLicense(fingerprint, promo.tier, expiresAt, orderId),
+    })
+    return { tier: promo.tier, expiresAt }
+  })
 }
