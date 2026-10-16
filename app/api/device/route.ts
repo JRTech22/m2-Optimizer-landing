@@ -1,5 +1,5 @@
 import { isFingerprint, json, options } from '@/server/http'
-import { touchDevice } from '@/server/store'
+import { ensureLaunchFreeLicense, touchDevice } from '@/server/store'
 
 export function OPTIONS() {
   return options()
@@ -12,7 +12,8 @@ export async function POST(request: Request) {
   }
   try {
     await touchDevice(body.fingerprint, body.version)
-    return json({ ok: true })
+    const license = await ensureLaunchFreeLicense(body.fingerprint)
+    return json({ ok: true, ...license })
   } catch {
     return json({ error: 'No se guardó el equipo' }, 503)
   }

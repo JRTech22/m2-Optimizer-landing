@@ -17,7 +17,18 @@ export interface Copy {
     terms: string
     privacy: string
     contact: string
-    windows: string
+    download: string
+  }
+  campaign: {
+    ribbon: string
+    ribbonCta: string
+    endsIn: string
+    until: string
+    days: string
+    hours: string
+    minutes: string
+    seconds: string
+    ended: string
   }
   theme: { toLight: string; toDark: string }
   langLabel: string
@@ -49,31 +60,88 @@ export interface Copy {
     promoCongrats: string
     promoClose: string
     promoDays: string
+    launch: {
+      badge: string
+      title: string
+      free: string
+      lede: string
+      includes: string[]
+      cta: string
+      normal: string
+      expires: string
+      paypalNote: string
+      paypalToggle: string
+      paypalHide: string
+    }
   }
 }
 
 const shared = {
   es: {
     brand: 'M2 Optimizer',
-    nav: { home: 'Inicio', features: 'Funciones', widgets: 'Widgets', pricing: 'Licencias', help: 'Ayuda', terms: 'Términos', privacy: 'Privacidad', contact: 'Contacto', windows: 'Para Windows' },
+    nav: { home: 'Inicio', features: 'Funciones', widgets: 'Widgets', pricing: 'Licencias', help: 'Ayuda', terms: 'Términos', privacy: 'Privacidad', contact: 'Contacto', download: 'Descargar gratis' },
+    campaign: {
+      ribbon: 'Lanzamiento: la licencia Completa es gratis hasta el',
+      ribbonCta: 'Descargar gratis',
+      endsIn: 'Termina en',
+      until: 'hasta el',
+      days: 'días',
+      hours: 'horas',
+      minutes: 'min',
+      seconds: 'seg',
+      ended: 'La campaña de lanzamiento terminó.',
+    },
     theme: { toLight: 'Usar tema claro', toDark: 'Usar tema oscuro' },
     langLabel: 'Idioma',
   },
   en: {
     brand: 'M2 Optimizer',
-    nav: { home: 'Home', features: 'Features', widgets: 'Widgets', pricing: 'Licenses', help: 'Help', terms: 'Terms', privacy: 'Privacy', contact: 'Contact', windows: 'For Windows' },
+    nav: { home: 'Home', features: 'Features', widgets: 'Widgets', pricing: 'Licenses', help: 'Help', terms: 'Terms', privacy: 'Privacy', contact: 'Contact', download: 'Download free' },
+    campaign: {
+      ribbon: 'Launch offer: the Complete license is free until',
+      ribbonCta: 'Download free',
+      endsIn: 'Ends in',
+      until: 'until',
+      days: 'days',
+      hours: 'hours',
+      minutes: 'min',
+      seconds: 'sec',
+      ended: 'The launch campaign has ended.',
+    },
     theme: { toLight: 'Use light theme', toDark: 'Use dark theme' },
     langLabel: 'Language',
   },
   fr: {
     brand: 'M2 Optimizer',
-    nav: { home: 'Accueil', features: 'Fonctions', widgets: 'Widgets', pricing: 'Licences', help: 'Aide', terms: 'Conditions', privacy: 'Confidentialité', contact: 'Contact', windows: 'Pour Windows' },
+    nav: { home: 'Accueil', features: 'Fonctions', widgets: 'Widgets', pricing: 'Licences', help: 'Aide', terms: 'Conditions', privacy: 'Confidentialité', contact: 'Contact', download: 'Télécharger gratuitement' },
+    campaign: {
+      ribbon: 'Lancement : la licence Complète est gratuite jusqu’au',
+      ribbonCta: 'Télécharger gratuitement',
+      endsIn: 'Se termine dans',
+      until: 'jusqu’au',
+      days: 'jours',
+      hours: 'heures',
+      minutes: 'min',
+      seconds: 'sec',
+      ended: 'La campagne de lancement est terminée.',
+    },
     theme: { toLight: 'Thème clair', toDark: 'Thème sombre' },
     langLabel: 'Langue',
   },
   pt: {
     brand: 'M2 Optimizer',
-    nav: { home: 'Início', features: 'Funções', widgets: 'Widgets', pricing: 'Licenças', help: 'Ajuda', terms: 'Termos', privacy: 'Privacidade', contact: 'Contato', windows: 'Para Windows' },
+    nav: { home: 'Início', features: 'Funções', widgets: 'Widgets', pricing: 'Licenças', help: 'Ajuda', terms: 'Termos', privacy: 'Privacidade', contact: 'Contato', download: 'Baixar grátis' },
+    campaign: {
+      ribbon: 'Lançamento: a licença Completa é grátis até',
+      ribbonCta: 'Baixar grátis',
+      endsIn: 'Termina em',
+      until: 'até',
+      days: 'dias',
+      hours: 'horas',
+      minutes: 'min',
+      seconds: 'seg',
+      ended: 'A campanha de lançamento terminou.',
+    },
     theme: { toLight: 'Usar tema claro', toDark: 'Usar tema escuro' },
     langLabel: 'Idioma',
   },
@@ -94,7 +162,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Precios',
-        lede: 'Un año desde el pago confirmado. La huella del equipo viaja con el pedido. Si tienes un código, canjéalo aquí.',
+        lede: 'En el lanzamiento la licencia Completa es gratis. Después, un año desde el pago confirmado. Si tienes un código, canjéalo aquí.',
         blocks: [
           { heading: 'Básica · 4,99 USD', body: 'Análisis, historial en solo lectura, relojes, desactivar programas del inicio y cambiar el plan de energía.' },
           { heading: 'Completa · 19,99 USD', body: 'Todo el catálogo: temporales, papelera, cierre de apps, desinstalación de basura, rutina automática, widgets de sensores y modo encima de juegos.' },
@@ -116,6 +184,7 @@ export const COPY: Record<Lang, Copy> = {
           { heading: 'Qué compras', body: 'La básica abre solo el tramo reversible. La completa abre el catálogo descrito en la página de precios. La gratis no escribe en Windows.' },
           { heading: 'Pago', body: 'PayPal cobra 4,99 o 19,99 USD. La licencia empieza cuando el servidor confirma la captura y dura un año.' },
           { heading: 'Cambios en Windows', body: 'Cada acción se muestra antes de aplicarse. M2 Optimizer no modifica software de seguridad.' },
+          { heading: 'Lanzamiento gratis', body: 'Hasta el 1 de enero de 2027 (UTC) la licencia Completa se activa sin costo en tu equipo. Esa licencia gratuita vence en esa fecha; después, la Completa cuesta 19,99 USD al año. Las licencias pagadas no se acortan.' },
         ],
       },
       privacy: {
@@ -124,6 +193,7 @@ export const COPY: Record<Lang, Copy> = {
         blocks: [
           { heading: 'Huella', body: 'Es el identificador de máquina de Windows, pasado por SHA-256. No es un rastreo del navegador.' },
           { heading: 'Pago', body: 'PayPal procesa la tarjeta o el saldo. Guardamos el correo, el nivel, la caducidad, la huella y el id de la orden.' },
+          { heading: 'Lanzamiento gratis', body: 'Para activar la licencia gratuita guardamos solo la huella del equipo, el nivel y la fecha de vencimiento. No pedimos tarjeta ni datos de pago.' },
           { heading: 'Contacto', body: 'Si escribes a contacto@m2dominicanrd.com, el mensaje llega a ese buzón.' },
         ],
       },
@@ -165,6 +235,19 @@ export const COPY: Record<Lang, Copy> = {
       promoCongrats: 'La licencia quedó activa en este equipo.',
       promoClose: 'Listo',
       promoDays: 'días',
+      launch: {
+        badge: 'LANZAMIENTO',
+        title: 'Completa, gratis',
+        free: '0 USD',
+        lede: 'Descarga M2 Optimizer y abre la app: la licencia Completa se activa sola en tu equipo, sin tarjeta ni correo.',
+        includes: ['Todo el catálogo de limpieza', 'Rutina automática', 'Widgets de sensores', 'Modo encima de juegos'],
+        cta: 'Descargar gratis',
+        normal: 'Precio normal después: 19,99 USD al año',
+        expires: 'Gratis hasta el',
+        paypalNote: 'No necesitas pagar nada durante el lanzamiento. PayPal vuelve cuando termine.',
+        paypalToggle: 'Prefiero pagar con PayPal ahora',
+        paypalHide: 'Ocultar el pago',
+      },
     },
   },
   en: {
@@ -181,7 +264,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Pricing',
-        lede: 'One year from the confirmed payment. The PC fingerprint travels with the order. If you have a code, redeem it here.',
+        lede: 'During launch the Complete license is free. Afterwards, one year from the confirmed payment. If you have a code, redeem it here.',
         blocks: [
           { heading: 'Basic · 4.99 USD', body: 'Analysis, read-only history, clocks, disabling startup programs and changing the power plan.' },
           { heading: 'Complete · 19.99 USD', body: 'The full catalog: temp files, recycle bin, closing apps, junk uninstall, automation, sensor widgets and game overlay.' },
@@ -203,6 +286,7 @@ export const COPY: Record<Lang, Copy> = {
           { heading: 'What you buy', body: 'Basic opens only the reversible slice. Complete opens the catalog on the pricing page. Free does not write to Windows.' },
           { heading: 'Payment', body: 'PayPal charges 4.99 or 19.99 USD. The license starts when the server confirms the capture and lasts one year.' },
           { heading: 'Windows changes', body: 'Each action is shown before it is applied. M2 Optimizer does not modify security software.' },
+          { heading: 'Launch Free', body: 'Until January 1, 2027 (UTC) the Complete license turns on for free on your PC. That free license expires on that date; afterwards Complete costs 19.99 USD a year. Paid licenses are never shortened.' },
         ],
       },
       privacy: {
@@ -211,6 +295,7 @@ export const COPY: Record<Lang, Copy> = {
         blocks: [
           { heading: 'Fingerprint', body: 'It is the Windows machine id, passed through SHA-256. It is not a browser tracker.' },
           { heading: 'Payment', body: 'PayPal processes the card or balance. We store the email, tier, expiry, fingerprint and order id.' },
+          { heading: 'Launch Free', body: 'To turn on the free license we store only the PC fingerprint, the tier and the expiry date. We do not ask for a card or payment details.' },
           { heading: 'Contact', body: 'Mail to contacto@m2dominicanrd.com arrives in that inbox.' },
         ],
       },
@@ -252,6 +337,19 @@ export const COPY: Record<Lang, Copy> = {
       promoCongrats: 'The license is active on this PC.',
       promoClose: 'Done',
       promoDays: 'days',
+      launch: {
+        badge: 'LAUNCH',
+        title: 'Complete, free',
+        free: '0 USD',
+        lede: 'Download M2 Optimizer and open the app: the Complete license turns on by itself on your PC, no card or email needed.',
+        includes: ['The full cleanup catalog', 'Automation', 'Sensor widgets', 'Game overlay'],
+        cta: 'Download free',
+        normal: 'Regular price afterwards: 19.99 USD a year',
+        expires: 'Free until',
+        paypalNote: 'You do not need to pay anything during launch. PayPal returns when it ends.',
+        paypalToggle: 'I would rather pay with PayPal now',
+        paypalHide: 'Hide payment',
+      },
     },
   },
   fr: {
@@ -268,7 +366,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Tarifs',
-        lede: 'Un an à partir du paiement confirmé. L’empreinte du PC voyage avec la commande. Un code se réclame ici.',
+        lede: 'Pendant le lancement, la licence Complète est gratuite. Ensuite, un an à partir du paiement confirmé. Un code se réclame ici.',
         blocks: [
           { heading: 'Basique · 4,99 USD', body: 'Analyse, historique en lecture seule, horloges, désactivation des programmes au démarrage et plan d’alimentation.' },
           { heading: 'Complète · 19,99 USD', body: 'Tout le catalogue : fichiers temporaires, corbeille, fermeture d’apps, désinstallation des indésirables, routine, widgets capteurs et mode jeu.' },
@@ -290,6 +388,7 @@ export const COPY: Record<Lang, Copy> = {
           { heading: 'Ce que vous achetez', body: 'La basique ouvre seulement la partie réversible. La complète ouvre le catalogue de la page tarifs. La gratuite n’écrit pas dans Windows.' },
           { heading: 'Paiement', body: 'PayPal encaisse 4,99 ou 19,99 USD. La licence commence quand le serveur confirme la capture et dure un an.' },
           { heading: 'Changements Windows', body: 'Chaque action est montrée avant d’être appliquée. M2 Optimizer ne modifie pas les logiciels de sécurité.' },
+          { heading: 'Lancement gratuit', body: 'Jusqu’au 1er janvier 2027 (UTC), la licence Complète s’active gratuitement sur votre PC. Cette licence gratuite expire à cette date ; ensuite, la Complète coûte 19,99 USD par an. Les licences payées ne sont jamais raccourcies.' },
         ],
       },
       privacy: {
@@ -298,6 +397,7 @@ export const COPY: Record<Lang, Copy> = {
         blocks: [
           { heading: 'Empreinte', body: 'C’est l’identifiant machine de Windows, passé par SHA-256. Ce n’est pas un suivi du navigateur.' },
           { heading: 'Paiement', body: 'PayPal traite la carte ou le solde. Nous gardons le courriel, le niveau, l’échéance, l’empreinte et l’id de commande.' },
+          { heading: 'Lancement gratuit', body: 'Pour activer la licence gratuite, nous gardons seulement l’empreinte du PC, le niveau et la date d’expiration. Aucune carte ni donnée de paiement n’est demandée.' },
           { heading: 'Contact', body: 'Un message à contacto@m2dominicanrd.com arrive dans cette boîte.' },
         ],
       },
@@ -339,6 +439,19 @@ export const COPY: Record<Lang, Copy> = {
       promoCongrats: 'La licence est active sur ce PC.',
       promoClose: 'OK',
       promoDays: 'jours',
+      launch: {
+        badge: 'LANCEMENT',
+        title: 'Complète, gratuite',
+        free: '0 USD',
+        lede: 'Téléchargez M2 Optimizer et ouvrez l’app : la licence Complète s’active toute seule sur votre PC, sans carte ni courriel.',
+        includes: ['Tout le catalogue de nettoyage', 'Routine automatique', 'Widgets capteurs', 'Mode jeu'],
+        cta: 'Télécharger gratuitement',
+        normal: 'Prix normal ensuite : 19,99 USD par an',
+        expires: 'Gratuite jusqu’au',
+        paypalNote: 'Vous n’avez rien à payer pendant le lancement. PayPal revient à la fin.',
+        paypalToggle: 'Je préfère payer avec PayPal maintenant',
+        paypalHide: 'Masquer le paiement',
+      },
     },
   },
   pt: {
@@ -355,7 +468,7 @@ export const COPY: Record<Lang, Copy> = {
       },
       pricing: {
         title: 'Preços',
-        lede: 'Um ano a partir do pagamento confirmado. A impressão do PC vai com o pedido. Se tiver um código, resgate aqui.',
+        lede: 'No lançamento a licença Completa é grátis. Depois, um ano a partir do pagamento confirmado. Se tiver um código, resgate aqui.',
         blocks: [
           { heading: 'Básica · 4,99 USD', body: 'Análise, histórico só de leitura, relógios, desativar programas da inicialização e mudar o plano de energia.' },
           { heading: 'Completa · 19,99 USD', body: 'O catálogo inteiro: temporários, lixeira, fechar apps, desinstalar lixo, rotina, widgets de sensores e modo sobre os jogos.' },
@@ -377,6 +490,7 @@ export const COPY: Record<Lang, Copy> = {
           { heading: 'O que você compra', body: 'A básica abre só o trecho reversível. A completa abre o catálogo da página de preços. A grátis não escreve no Windows.' },
           { heading: 'Pagamento', body: 'O PayPal cobra 4,99 ou 19,99 USD. A licença começa quando o servidor confirma a captura e dura um ano.' },
           { heading: 'Mudanças no Windows', body: 'Cada ação aparece antes de ser aplicada. O M2 Optimizer não modifica software de segurança.' },
+          { heading: 'Lançamento grátis', body: 'Até 1 de janeiro de 2027 (UTC) a licença Completa é ativada sem custo no seu PC. Essa licença gratuita expira nessa data; depois, a Completa custa 19,99 USD por ano. Licenças pagas nunca são encurtadas.' },
         ],
       },
       privacy: {
@@ -385,6 +499,7 @@ export const COPY: Record<Lang, Copy> = {
         blocks: [
           { heading: 'Impressão', body: 'É o identificador de máquina do Windows, passado por SHA-256. Não é um rastreio do navegador.' },
           { heading: 'Pagamento', body: 'O PayPal processa o cartão ou o saldo. Guardamos o e-mail, o nível, a validade, a impressão e o id do pedido.' },
+          { heading: 'Lançamento grátis', body: 'Para ativar a licença gratuita guardamos apenas a impressão do PC, o nível e a data de validade. Não pedimos cartão nem dados de pagamento.' },
           { heading: 'Contato', body: 'Uma mensagem para contacto@m2dominicanrd.com chega nessa caixa.' },
         ],
       },
@@ -426,6 +541,19 @@ export const COPY: Record<Lang, Copy> = {
       promoCongrats: 'A licença ficou ativa neste PC.',
       promoClose: 'Pronto',
       promoDays: 'dias',
+      launch: {
+        badge: 'LANÇAMENTO',
+        title: 'Completa, grátis',
+        free: '0 USD',
+        lede: 'Baixe o M2 Optimizer e abra o app: a licença Completa é ativada sozinha no seu PC, sem cartão nem e-mail.',
+        includes: ['Todo o catálogo de limpeza', 'Rotina automática', 'Widgets de sensores', 'Modo sobre os jogos'],
+        cta: 'Baixar grátis',
+        normal: 'Preço normal depois: 19,99 USD por ano',
+        expires: 'Grátis até',
+        paypalNote: 'Você não precisa pagar nada durante o lançamento. O PayPal volta quando terminar.',
+        paypalToggle: 'Prefiro pagar com PayPal agora',
+        paypalHide: 'Ocultar o pagamento',
+      },
     },
   },
 }

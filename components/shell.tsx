@@ -1,9 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Countdown, CampaignProvider, useCampaign } from '@/components/campaign'
+import { formatLaunchFreeDate } from '@/lib/campaign'
 import { COPY, LANGS, type Lang } from '@/lib/copy'
+import { barePath, langFromPath, localeHref } from '@/lib/locale'
 
 interface Prefs {
   lang: Lang
@@ -99,16 +102,24 @@ function WindowsIcon() {
 }
 
 export function Shell({ children }: { children: ReactNode }) {
+  return (
+    <CampaignProvider>
+      <ShellFrame>{children}</ShellFrame>
+    </CampaignProvider>
+  )
+}
+
+function ShellFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const [lang, setLang] = useState<Lang>('es')
+  const router = useRouter()
+  const campaign = useCampaign()
+  const lang = langFromPath(pathname)
   const [theme, setTheme] = useState<'light' | 'dark'>('dark')
   const [open, setOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    const storedLang = localStorage.getItem('m2.landing.lang')
     const storedTheme = localStorage.getItem('m2.landing.theme')
-    if (storedLang === 'es' || storedLang === 'en' || storedLang === 'fr' || storedLang === 'pt') setLang(storedLang)
     if (storedTheme === 'light' || storedTheme === 'dark') setTheme(storedTheme)
   }, [])
   useEffect(() => {
@@ -117,6 +128,11 @@ export function Shell({ children }: { children: ReactNode }) {
     localStorage.setItem('m2.landing.lang', lang)
     localStorage.setItem('m2.landing.theme', theme)
   }, [lang, theme])
+  const chooseLang = (next: Lang) => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : ''
+    router.push(`${localeHref(next, barePath(pathname))}${hash}`)
+    setLangOpen(false)
+  }
   useEffect(() => {
     const onPointer = (event: PointerEvent) => {
       if (!langRef.current?.contains(event.target as Node)) setLangOpen(false)
@@ -132,6 +148,7 @@ export function Shell({ children }: { children: ReactNode }) {
     }
   }, [])
   const copy = COPY[lang]
+  const bare = barePath(pathname)
   const links = [
     ['/', copy.nav.home],
     ['/#funciones', copy.nav.features],
@@ -146,13 +163,13 @@ export function Shell({ children }: { children: ReactNode }) {
     ['/privacy', copy.nav.privacy],
     ['/contact', copy.nav.contact],
   ] as const
-  const bare = pathname === '/dma'
+  const dma = bare === '/dma'
   return (
-    <PrefsContext.Provider value={{ lang, theme, setLang, setTheme }}>
-      {!bare && <header className="bar">
+    <PrefsContext.Provider value={{ lang, theme, setLang: chooseLang, setTheme }}>
+      {!dma && <header className="bar">
         <div className="bar-inner">
-          <Link href="/" className="brand" onClick={() => setOpen(false)}>
-            <img src="/logo.png" alt="" width={40} height={40} />
+          <Link href={localeHref(lang, '/')} className="brand" onClick={() => setOpen(false)}>
+            <img src="/logo.png" alt="M2 Optimizer" width={40} height={40} />
             {copy.brand}
           </Link>
           <button type="button" className="menu" aria-expanded={open} onClick={() => setOpen((value) => !value)}>
@@ -160,9 +177,9 @@ export function Shell({ children }: { children: ReactNode }) {
           </button>
           <nav className={open ? 'open' : undefined}>
             {links.map(([href, label]) => {
-              const current = href === pathname
+              const current = !href.includes('#') && bare === href
               return (
-                <Link key={href} href={href} aria-current={current ? 'page' : undefined} onClick={() => setOpen(false)}>
+                <Link key={href} href={localeHref(lang, href)} aria-current={current ? 'page' : undefined} onClick={() => setOpen(false)}>
                   {label}
                 </Link>
               )
@@ -192,10 +209,7 @@ export function Shell({ children }: { children: ReactNode }) {
                         type="button"
                         role="option"
                         aria-selected={item === lang}
-                        onClick={() => {
-                          setLang(item)
-                          setLangOpen(false)
-                        }}
+                        onClick={() => chooseLang(item)}
                       >
                         <Flag id={item} />
                         <span>{LANG_NAMES[item]}</span>
@@ -226,24 +240,39 @@ export function Shell({ children }: { children: ReactNode }) {
             </button>
             <a className="btn btn-primary win" href="/download">
               <WindowsIcon />
-              {copy.nav.windows}
+              {copy.nav.download}
             </a>
           </div>
         </div>
+        {campaign.active && (
+          <div className="ribbon">
+            <div className="ribbon-inner">
+              <span className="ribbon-dot" aria-hidden />
+              <p>
+                {copy.campaign.ribbon} <strong>{formatLaunchFreeDate(lang, campaign.until)}</strong>
+              </p>
+              <Countdown until={campaign.until} labels={copy.campaign} tone="compact" />
+              <a className="ribbon-link" href="/download">
+                {copy.campaign.ribbonCta}
+                <span aria-hidden> →</span>
+              </a>
+            </div>
+          </div>
+        )}
       </header>}
       <main>{children}</main>
-      {!bare && <footer className="foot">
+      {!dma && <footer className="foot">
         <div className="wrap foot-grid">
           <div>
             <p className="brand">
-              <img src="/logo.png" alt="" width={32} height={32} />
+              <img src="/logo.png" alt="M2 Optimizer" width={32} height={32} />
               {copy.brand}
             </p>
             <p>© {new Date().getFullYear()} M2Dominican RD</p>
           </div>
           <div className="foot-links">
             {foot.map(([href, label]) => (
-              <Link key={href} href={href}>
+              <Link key={href} href={localeHref(lang, href)}>
                 {label}
               </Link>
             ))}

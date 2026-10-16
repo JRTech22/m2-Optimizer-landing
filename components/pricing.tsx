@@ -2,8 +2,10 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { Countdown, useCampaign } from '@/components/campaign'
 import { PromoCelebrate } from '@/components/promo-celebrate'
 import { usePrefs } from '@/components/shell'
+import { formatLaunchFreeDate } from '@/lib/campaign'
 import { COPY } from '@/lib/copy'
 import { maskPromo, promoReady } from '@/lib/promo-code'
 import { PAYPAL_CLIENT_ID } from '@/lib/paypal-public'
@@ -26,6 +28,10 @@ export function Pricing() {
   const { lang } = usePrefs()
   const copy = COPY[lang].pricing
   const page = COPY[lang].pages.pricing
+  const shared = COPY[lang].campaign
+  const campaign = useCampaign()
+  const [showPaid, setShowPaid] = useState(false)
+  const paidVisible = !campaign.active || showPaid
   const initialTier = params.get('tier') === 'basic' ? 'basic' : 'complete'
   const fromApp = params.get('device') ?? ''
   const device = /^[a-f0-9]{64}$/.test(fromApp) ? fromApp : ''
@@ -113,7 +119,7 @@ export function Pricing() {
   }, [ready, email, device, tier, copy.reused, copy.partial])
 
   useEffect(() => {
-    if (!ready || covered) return
+    if (!ready || covered || !paidVisible) return
     const holder = document.querySelector('#paypal-button')
     if (!holder) return
     holder.innerHTML = ''
@@ -160,7 +166,7 @@ export function Pricing() {
       cancelled = true
       if (holder) holder.innerHTML = ''
     }
-  }, [ready, covered, tier, device, email, copy.paid, copy.reused])
+  }, [ready, covered, paidVisible, tier, device, email, copy.paid, copy.reused])
 
   const plans = [
     { id: 'basic' as const, name: copy.basic, price: '4,99', body: page.blocks[0]?.body ?? '' },
@@ -177,6 +183,53 @@ export function Pricing() {
             <p className="lede">{page.lede}</p>
           </div>
         </header>
+        {campaign.active && (
+          <div className="wrap">
+            <section className="launch-panel" aria-labelledby="launch-title">
+              <div className="launch-copy">
+                <span className="badge">
+                  <span className="badge-dot" aria-hidden />
+                  {copy.launch.badge}
+                </span>
+                <h2 id="launch-title">{copy.launch.title}</h2>
+                <p className="launch-price">
+                  <strong>{copy.launch.free}</strong>
+                  <s>19,99 USD</s>
+                </p>
+                <p className="launch-lede">{copy.launch.lede}</p>
+                <ul className="launch-list">
+                  {copy.launch.includes.map((item) => (
+                    <li key={item}>
+                      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+                        <path d="M3.5 8.4 6.6 11.5 12.5 4.8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="cta-row">
+                  <a className="btn btn-primary btn-lg" href="/download">
+                    {copy.launch.cta}
+                  </a>
+                </div>
+                <p className="launch-normal">{copy.launch.normal}</p>
+              </div>
+              <div className="launch-side">
+                <p className="cd-lead">
+                  <span className="pulse-dot" aria-hidden />
+                  {copy.launch.expires} {formatLaunchFreeDate(lang, campaign.until)}
+                </p>
+                <Countdown until={campaign.until} labels={shared} />
+                <p className="launch-paynote">{copy.launch.paypalNote}</p>
+                <button type="button" className="linkish launch-toggle" aria-expanded={showPaid} onClick={() => setShowPaid((value) => !value)}>
+                  {showPaid ? copy.launch.paypalHide : copy.launch.paypalToggle}
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+        {paidVisible && (
+          <>
         <div className="wrap license-grid">
           {plans.map((plan) => (
             <button
@@ -226,11 +279,19 @@ export function Pricing() {
           {!covered && <div id="paypal-button" />}
           {message && <p className="pay-note">{message}</p>}
         </form>
-        <form className="wrap promo-card card" onSubmit={(event) => void redeem(event)}>
+          </>
+        )}
+        <form className={campaign.active ? 'wrap promo-card promo-quiet card' : 'wrap promo-card card'} onSubmit={(event) => void redeem(event)}>
           <div>
             <h2>{copy.promoTitle}</h2>
             <p>{copy.promoLead}</p>
           </div>
+          {!paidVisible && (
+            <label className="promo-email">
+              {copy.email}
+              <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" />
+            </label>
+          )}
           <div key={shake} className={shake > 0 ? 'promo-entry promo-temblor' : 'promo-entry'}>
             <input
               value={code}

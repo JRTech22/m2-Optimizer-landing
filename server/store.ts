@@ -4,6 +4,12 @@ import { getApps, initializeApp } from 'firebase/app'
 import { randomBytes } from 'node:crypto'
 import { collection, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, query, runTransaction, setDoc, where } from 'firebase/firestore'
 import { firebaseConfig } from '@/lib/firebase-public'
+import {
+  isLaunchFreeActive,
+  LAUNCH_FREE_EMAIL,
+  LAUNCH_FREE_ORDER_ID,
+  LAUNCH_FREE_UNTIL,
+} from '@/server/campaign'
 import { signLicense, signPromo, verifyLicense, type PaidTier } from '@/server/paypal'
 
 export interface LicenseRecord {
@@ -45,16 +51,69 @@ export async function saveLicense(record: LicenseRecord): Promise<void> {
   await setDoc(doc(webDb(), 'm2_licenses', record.fingerprint), record)
 }
 
-export async function readLicense(fingerprint: string): Promise<{ tier: 'free' | PaidTier; expiresAt: string | null }> {
+async function loadLicenseRecord(fingerprint: string): Promise<LicenseRecord | undefined> {
   const admin = await adminDb()
-  const data = admin
-    ? ((await admin.collection('m2_licenses').doc(fingerprint).get()).data() as LicenseRecord | undefined)
-    : ((await getDoc(doc(webDb(), 'm2_licenses', fingerprint))).data() as LicenseRecord | undefined)
+  if (admin) {
+    return (await admin.collection('m2_licenses').doc(fingerprint).get()).data() as LicenseRecord | undefined
+  }
+  return (await getDoc(doc(webDb(), 'm2_licenses', fingerprint))).data() as LicenseRecord | undefined
+}
+
+function activePaidFrom(
+  data: LicenseRecord | undefined,
+  fingerprint: string,
+): { tier: PaidTier; expiresAt: string; orderId: string } | null {
+  if (!data) return null
+  const valid = verifyLicense(data.fingerprint, data.tier, data.expiresAt, data.orderId, data.signature)
+  if (!valid || data.fingerprint !== fingerprint) return null
+  if (data.tier !== 'basic' && data.tier !== 'complete') return null
+  if (Date.parse(data.expiresAt) <= Date.now()) return null
+  return { tier: data.tier, expiresAt: data.expiresAt, orderId: data.orderId }
+}
+
+/** Grants Complete until LAUNCH_FREE_UNTIL when the campaign is active. Never shortens a better paid license. */
+export async function ensureLaunchFreeLicense(fingerprint: string): Promise<{ tier: 'free' | PaidTier; expiresAt: string | null }> {
+  if (!isLaunchFreeActive()) {
+    return readLicenseRaw(fingerprint)
+  }
+  const existing = await loadLicenseRecord(fingerprint)
+  const active = activePaidFrom(existing, fingerprint)
+  const campaignEnd = Date.parse(LAUNCH_FREE_UNTIL)
+  if (active?.tier === 'complete' && Date.parse(active.expiresAt) >= campaignEnd) {
+    return { tier: 'complete', expiresAt: active.expiresAt }
+  }
+  const expiresAt =
+    active && Date.parse(active.expiresAt) > campaignEnd ? active.expiresAt : LAUNCH_FREE_UNTIL
+  if (active?.tier === 'complete' && active.expiresAt === expiresAt) {
+    return { tier: 'complete', expiresAt }
+  }
+  const orderId =
+    active && Date.parse(active.expiresAt) > campaignEnd && active.orderId !== LAUNCH_FREE_ORDER_ID
+      ? active.orderId
+      : LAUNCH_FREE_ORDER_ID
+  const record: LicenseRecord = {
+    email: existing?.email && existing.email.length > 0 ? existing.email : LAUNCH_FREE_EMAIL,
+    tier: 'complete',
+    expiresAt,
+    fingerprint,
+    orderId,
+    signature: signLicense(fingerprint, 'complete', expiresAt, orderId),
+  }
+  await saveLicense(record)
+  return { tier: 'complete', expiresAt }
+}
+
+async function readLicenseRaw(fingerprint: string): Promise<{ tier: 'free' | PaidTier; expiresAt: string | null }> {
+  const data = await loadLicenseRecord(fingerprint)
   if (!data) return { tier: 'free', expiresAt: null }
   const valid = verifyLicense(data.fingerprint, data.tier, data.expiresAt, data.orderId, data.signature)
   if (!valid || data.fingerprint !== fingerprint) return { tier: 'free', expiresAt: null }
   if (Date.parse(data.expiresAt) <= Date.now()) return { tier: 'free', expiresAt: data.expiresAt }
   return { tier: data.tier, expiresAt: data.expiresAt }
+}
+
+export async function readLicense(fingerprint: string): Promise<{ tier: 'free' | PaidTier; expiresAt: string | null }> {
+  return ensureLaunchFreeLicense(fingerprint)
 }
 
 export async function touchDevice(fingerprint: string, version: string): Promise<void> {

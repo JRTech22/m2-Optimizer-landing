@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 
-const COLORS = ['#ff3d81', '#ffd23d', '#3dffb5', '#3dc9ff', '#b53dff', '#ff8a3d', '#ffffff']
+const COLORS = ['#2b78ff', '#22d3ee', '#7ff0ff', '#3dc9ff', '#4a8dff', '#9fd0ff', '#ffffff']
 
 function Confetti({ count }: { count: number }) {
   const pieces = useMemo(

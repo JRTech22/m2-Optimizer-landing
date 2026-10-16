@@ -162,12 +162,13 @@ export function DmaPanel() {
     setNotice('')
   }
 
-  if (!ready) return <section className="dma"><p>Cargando…</p></section>
+  if (!ready) return <section className="dma"><p className="dma-loading">Cargando…</p></section>
 
   if (!authed || !data) {
     return (
       <section className="dma">
         <form className="card dma-card" onSubmit={(event) => void enter(event)}>
+          <p className="eyebrow">M2 Optimizer</p>
           <h1>DMA</h1>
           <label>
             PIN
@@ -184,7 +185,7 @@ export function DmaPanel() {
           <button className="btn btn-primary" type="submit" disabled={busy || pin.length !== 4}>
             Entrar
           </button>
-          {error && <p>{error}</p>}
+          {error && <p className="dma-error" role="alert">{error}</p>}
         </form>
       </section>
     )
@@ -193,8 +194,11 @@ export function DmaPanel() {
   return (
     <section className="dma">
       <div className="dma-head">
-        <h1>DMA</h1>
-        <button className="btn" type="button" onClick={() => void leave()}>
+        <div>
+          <p className="eyebrow">M2 Optimizer</p>
+          <h1>DMA</h1>
+        </div>
+        <button className="btn btn-ghost" type="button" onClick={() => void leave()}>
           Salir
         </button>
       </div>

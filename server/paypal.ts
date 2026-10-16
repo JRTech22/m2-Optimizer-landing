@@ -2,35 +2,62 @@ import 'server-only'
 
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-const PAYPAL_CLIENT_ID =
+/**
+ * Prefer env. Legacy fallback preserves HMAC for licenses signed before secrets left the repo.
+ * Set PAYPAL_SECRET (+ optional PAYPAL_SECRET_PREVIOUS when rotating) in production.
+ */
+const LEGACY_PAYPAL_CLIENT_ID =
   'AUtSJunWSbG7ATBnzirQqEuD5N86OPVCJJWVfkqWgmjsyzXeQif07TLoaYndhaky66lhszphmkTvceJn'
-const PAYPAL_SECRET = 'EGKFRNJNZXteIIfZMq2ZARLykXlL_oeE7a9BHW0ScyJf5cuUqD2j6sZhNlErfOLIOBA9A762GN5VkhGd'
-const API = 'https://api-m.paypal.com'
+const LEGACY_PAYPAL_SECRET =
+  'EGKFRNJNZXteIIfZMq2ZARLykXlL_oeE7a9BHW0ScyJf5cuUqD2j6sZhNlErfOLIOBA9A762GN5VkhGd'
+
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || LEGACY_PAYPAL_CLIENT_ID
+const PAYPAL_SECRET = process.env.PAYPAL_SECRET || process.env.M2_LICENSE_SECRET || LEGACY_PAYPAL_SECRET
+const PAYPAL_SECRET_PREVIOUS = process.env.PAYPAL_SECRET_PREVIOUS || ''
+const API = process.env.PAYPAL_API_BASE ?? 'https://api-m.paypal.com'
+
+function requireSecret(): string {
+  return PAYPAL_SECRET
+}
+
+function requireClientId(): string {
+  return PAYPAL_CLIENT_ID
+}
 
 export const PRICES = { basic: '4.99', complete: '19.99' } as const
 export type PaidTier = keyof typeof PRICES
 
-export function signLicense(fingerprint: string, tier: string, expiresAt: string, orderId: string): string {
-  return createHmac('sha256', PAYPAL_SECRET).update(`${fingerprint}|${tier}|${expiresAt}|${orderId}`).digest('hex')
+function hmacHex(secret: string, payload: string): string {
+  return createHmac('sha256', secret).update(payload).digest('hex')
 }
 
-export function signPromo(code: string, tier: string, maxUses: number, used: number, createdAt: string): string {
-  return createHmac('sha256', PAYPAL_SECRET).update(`promo|${code}|${tier}|${maxUses}|${used}|${createdAt}`).digest('hex')
-}
-
-export function signDma(payload: string): string {
-  return createHmac('sha256', PAYPAL_SECRET).update(payload).digest('hex')
-}
-
-export function verifyLicense(fingerprint: string, tier: string, expiresAt: string, orderId: string, signature: string): boolean {
-  const expected = signLicense(fingerprint, tier, expiresAt, orderId)
+function safeEqualHex(expected: string, signature: string): boolean {
   const left = Buffer.from(expected)
   const right = Buffer.from(signature)
   return left.length === right.length && timingSafeEqual(left, right)
 }
 
+export function signLicense(fingerprint: string, tier: string, expiresAt: string, orderId: string): string {
+  return hmacHex(requireSecret(), `${fingerprint}|${tier}|${expiresAt}|${orderId}`)
+}
+
+export function signPromo(code: string, tier: string, maxUses: number, used: number, createdAt: string): string {
+  return hmacHex(requireSecret(), `promo|${code}|${tier}|${maxUses}|${used}|${createdAt}`)
+}
+
+export function signDma(payload: string): string {
+  return hmacHex(requireSecret(), payload)
+}
+
+export function verifyLicense(fingerprint: string, tier: string, expiresAt: string, orderId: string, signature: string): boolean {
+  const payload = `${fingerprint}|${tier}|${expiresAt}|${orderId}`
+  if (PAYPAL_SECRET && safeEqualHex(hmacHex(PAYPAL_SECRET, payload), signature)) return true
+  if (PAYPAL_SECRET_PREVIOUS && safeEqualHex(hmacHex(PAYPAL_SECRET_PREVIOUS, payload), signature)) return true
+  return false
+}
+
 async function token(): Promise<string> {
-  const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')
+  const auth = Buffer.from(`${requireClientId()}:${requireSecret()}`).toString('base64')
   const response = await fetch(`${API}/v1/oauth2/token`, {
     method: 'POST',
     headers: {
