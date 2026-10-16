@@ -135,6 +135,7 @@ export async function touchDevice(fingerprint: string, version: string): Promise
 const RELEASE_DOC = 'wlRcYzT17u74kyFtKlGy'
 const DMA_DOC = '8tsjnErktPZKN5p7kgI4'
 export const SITE_ORIGIN = 'https://optimizer.m2dominicanrd.com'
+export const APP_INSTALLER_URL = `${SITE_ORIGIN}/M2Optimizer.appinstaller`
 
 export interface VersionEntry {
   version: string
@@ -153,6 +154,13 @@ export interface DeviceRecord {
   firstSeen: string
   lastSeen: string
   version: string
+}
+
+const VERSION = /^\d+\.\d+\.\d+$/
+const VERSION_KEEP = 5
+
+export function versionedPath(version: string): string {
+  return VERSION.test(version) ? `/v/${version}` : '/download'
 }
 
 export function versionedUrl(version: string): string {
@@ -260,12 +268,34 @@ export async function claimLicense(email: string, fingerprint: string, requested
   return moved
 }
 
-export async function listLicenses(): Promise<LicenseRecord[]> {
+export async function listLicenses(includeExpired = false): Promise<LicenseRecord[]> {
   const rows = await licenseRows()
   return rows.flatMap((row) => {
-    const record = asLicense(row.id, row.data, false)
+    const record = asLicense(row.id, row.data, !includeExpired)
     return record ? [record] : []
   })
+}
+
+export async function extendLicense(fingerprint: string): Promise<LicenseRecord> {
+  const current = asLicense(fingerprint, (await loadLicenseRecord(fingerprint)) as Record<string, unknown> | undefined, false)
+  if (!current) throw new Error('Licencia no encontrada')
+  const base = Math.max(Date.now(), Date.parse(current.expiresAt) || 0)
+  const expires = new Date(base)
+  expires.setUTCFullYear(expires.getUTCFullYear() + 1)
+  const expiresAt = expires.toISOString()
+  const next: LicenseRecord = {
+    ...current,
+    expiresAt,
+    signature: signLicense(fingerprint, current.tier, expiresAt, current.orderId),
+  }
+  await saveLicense(next)
+  return next
+}
+
+export async function revokeLicense(fingerprint: string): Promise<void> {
+  const current = await loadLicenseRecord(fingerprint)
+  if (!current) throw new Error('Licencia no encontrada')
+  await removeLicense(fingerprint)
 }
 
 export async function listDevices(): Promise<DeviceRecord[]> {
@@ -320,6 +350,39 @@ export async function fileUrlFor(version: string): Promise<string | null> {
   return null
 }
 
+export function keepLatestVersions(versions: VersionEntry[], pinned?: string): VersionEntry[] {
+  const ranked = versions
+    .map((item, index) => ({ item, index }))
+    .sort((left, right) => {
+      const byTime = (right.item.publishedAt || '').localeCompare(left.item.publishedAt || '')
+      return byTime !== 0 ? byTime : right.index - left.index
+    })
+    .slice(0, VERSION_KEEP)
+    .map((entry) => entry.item)
+  if (!pinned || ranked.some((item) => item.version === pinned)) return ranked
+  const live = versions.find((item) => item.version === pinned)
+  if (!live) return ranked
+  return [live, ...ranked.filter((item) => item.version !== pinned)].slice(0, VERSION_KEEP)
+}
+
+async function writeCatalog(catalog: Catalog): Promise<void> {
+  const payload = { version: catalog.version, urlupdate: catalog.url, versions: catalog.versions }
+  const admin = await adminDb()
+  if (admin) {
+    await admin.collection('m2optimizer').doc(RELEASE_DOC).set(payload, { merge: true })
+    return
+  }
+  await setDoc(doc(webDb(), 'm2optimizer', RELEASE_DOC), payload, { merge: true })
+}
+
+export async function trimCatalog(catalog: Catalog): Promise<Catalog> {
+  const versions = keepLatestVersions(catalog.versions, catalog.version)
+  if (versions.length === catalog.versions.length) return catalog
+  const next = { version: catalog.version, url: catalog.url, versions }
+  await writeCatalog(next)
+  return next
+}
+
 export async function publishRelease(version: string, url: string): Promise<Catalog> {
   const current = await readCatalog()
   const publishedAt = new Date().toISOString()
@@ -328,14 +391,9 @@ export async function publishRelease(version: string, url: string): Promise<Cata
     versions.push({ version: current.version, url: current.url, publishedAt })
   }
   versions.push({ version, url, publishedAt })
-  const payload = { version, urlupdate: url, versions }
-  const admin = await adminDb()
-  if (admin) {
-    await admin.collection('m2optimizer').doc(RELEASE_DOC).set(payload, { merge: true })
-  } else {
-    await setDoc(doc(webDb(), 'm2optimizer', RELEASE_DOC), payload, { merge: true })
-  }
-  return { version, url, versions }
+  const next = { version, url, versions: keepLatestVersions(versions, version) }
+  await writeCatalog(next)
+  return next
 }
 
 const PROMO_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -397,6 +455,29 @@ export async function createPromo(tier: PaidTier, maxUses: number): Promise<Prom
     return { code, tier, maxUses, used: 0, createdAt }
   }
   throw new Error('No se pudo generar un código')
+}
+
+export async function closePromo(code: string): Promise<'deleted' | 'closed'> {
+  const admin = await adminDb()
+  const snap = admin
+    ? await admin.collection('m2_promos').doc(code).get()
+    : await getDoc(doc(webDb(), 'm2_promos', code))
+  const promo = asPromo(code, snap.data() as Record<string, unknown> | undefined)
+  if (!promo) throw new Error('Código no encontrado')
+  if (promo.used >= promo.maxUses) return 'closed'
+  if (promo.used === 0) {
+    if (admin) await admin.collection('m2_promos').doc(code).delete()
+    else await deleteDoc(doc(webDb(), 'm2_promos', code))
+    return 'deleted'
+  }
+  const next = {
+    ...promo,
+    maxUses: promo.used,
+    signature: signPromo(code, promo.tier, promo.used, promo.used, promo.createdAt),
+  }
+  if (admin) await admin.collection('m2_promos').doc(code).set(next)
+  else await setDoc(doc(webDb(), 'm2_promos', code), next)
+  return 'closed'
 }
 
 export async function listPromos(): Promise<PromoRecord[]> {

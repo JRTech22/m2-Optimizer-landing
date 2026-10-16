@@ -68,7 +68,7 @@ function LiveClock() {
 }
 
 export function Home() {
-  const { lang } = usePrefs()
+  const { lang, downloadHref } = usePrefs()
   const campaign = useCampaign()
   const copy = HOME[lang]
   const shared = COPY[lang].campaign
@@ -117,7 +117,7 @@ export function Home() {
               {hero.lede}
             </p>
             <div className="cta-row hero-in" style={{ animationDelay: '270ms' }}>
-              <a className="btn btn-primary btn-lg" href="/download">
+              <a className="btn btn-primary btn-lg" href={downloadHref}>
                 <WindowsIcon />
                 {copy.cta}
                 <ArrowIcon />
@@ -241,7 +241,7 @@ export function Home() {
                     </p>
                     <p>{free.body}</p>
                     <p className="plan-after">{free.after}</p>
-                    <a className="btn btn-primary" href="/download">
+                    <a className="btn btn-primary" href={downloadHref}>
                       <WindowsIcon />
                       {free.cta}
                     </a>
@@ -270,7 +270,7 @@ export function Home() {
             <p>{campaign.active ? copy.launchBandBody : copy.bandBody}</p>
           </div>
           {campaign.active ? (
-            <a className="btn btn-primary btn-lg" href="/download">
+            <a className="btn btn-primary btn-lg" href={downloadHref}>
               <WindowsIcon />
               {copy.launchBandCta}
             </a>

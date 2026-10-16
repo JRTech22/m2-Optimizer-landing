@@ -3,6 +3,7 @@ import { Outfit } from 'next/font/google'
 import { Shell } from '@/components/shell'
 import { COPY } from '@/lib/copy'
 import { SITE } from '@/lib/seo'
+import { APP_INSTALLER_URL } from '@/server/store'
 import './globals.css'
 
 const outfit = Outfit({ subsets: ['latin'], display: 'swap' })
@@ -67,7 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-        <Shell>{children}</Shell>
+        <Shell downloadHref={APP_INSTALLER_URL}>{children}</Shell>
       </body>
     </html>
   )

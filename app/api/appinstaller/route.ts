@@ -1,4 +1,4 @@
-import { readCatalog } from '@/server/store'
+import { APP_INSTALLER_URL, readCatalog, versionedUrl } from '@/server/store'
 
 function quad(version: string): string {
   const parts = version.split('.')
@@ -14,10 +14,11 @@ export async function GET() {
   const catalog = await readCatalog().catch(() => null)
   if (!catalog?.version || !catalog.url) return new Response('Not found', { status: 404 })
   const version = quad(catalog.version)
-  const page = 'https://optimizer.m2dominicanrd.com/M2Optimizer.appinstaller'
+  const page = APP_INSTALLER_URL
+  const packageUri = versionedUrl(catalog.version)
   const body = `<?xml version="1.0" encoding="utf-8"?>
 <AppInstaller xmlns="http://schemas.microsoft.com/appx/appinstaller/2018" Uri="${page}" Version="${version}">
-  <MainPackage Name="M2Optimizer" Publisher="CN=M2Dominican RD" Version="${version}" ProcessorArchitecture="x64" Uri="${xmlEscape(catalog.url)}" />
+  <MainPackage Name="M2Optimizer" Publisher="CN=M2Dominican RD" Version="${version}" ProcessorArchitecture="x64" Uri="${xmlEscape(packageUri)}" />
   <UpdateSettings>
     <OnLaunch HoursBetweenUpdateChecks="0" />
   </UpdateSettings>

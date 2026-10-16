@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { DmaPanel } from '@/components/dma-panel'
+import { DmaGate } from '@/components/dma/gate'
 
 export const metadata: Metadata = {
   title: 'DMA',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function DmaPage() {
-  return <DmaPanel />
+  return <DmaGate />
 }

@@ -25,7 +25,7 @@ declare global {
 
 export function Pricing() {
   const params = useSearchParams()
-  const { lang } = usePrefs()
+  const { lang, downloadHref } = usePrefs()
   const copy = COPY[lang].pricing
   const page = COPY[lang].pages.pricing
   const shared = COPY[lang].campaign
@@ -208,7 +208,7 @@ export function Pricing() {
                   ))}
                 </ul>
                 <div className="cta-row">
-                  <a className="btn btn-primary btn-lg" href="/download">
+                  <a className="btn btn-primary btn-lg" href={downloadHref}>
                     {copy.launch.cta}
                   </a>
                 </div>

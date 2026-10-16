@@ -11,6 +11,7 @@ import { barePath, langFromPath, localeHref } from '@/lib/locale'
 interface Prefs {
   lang: Lang
   theme: 'light' | 'dark'
+  downloadHref: string
   setLang: (lang: Lang) => void
   setTheme: (theme: 'light' | 'dark') => void
 }
@@ -18,6 +19,7 @@ interface Prefs {
 const PrefsContext = createContext<Prefs>({
   lang: 'es',
   theme: 'dark',
+  downloadHref: 'https://optimizer.m2dominicanrd.com/M2Optimizer.appinstaller',
   setLang: () => undefined,
   setTheme: () => undefined,
 })
@@ -101,15 +103,15 @@ function WindowsIcon() {
   )
 }
 
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({ children, downloadHref }: { children: ReactNode; downloadHref: string }) {
   return (
     <CampaignProvider>
-      <ShellFrame>{children}</ShellFrame>
+      <ShellFrame downloadHref={downloadHref}>{children}</ShellFrame>
     </CampaignProvider>
   )
 }
 
-function ShellFrame({ children }: { children: ReactNode }) {
+function ShellFrame({ children, downloadHref }: { children: ReactNode; downloadHref: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const campaign = useCampaign()
@@ -163,9 +165,9 @@ function ShellFrame({ children }: { children: ReactNode }) {
     ['/privacy', copy.nav.privacy],
     ['/contact', copy.nav.contact],
   ] as const
-  const dma = bare === '/dma'
+  const dma = bare === '/dma' || bare.startsWith('/dma/')
   return (
-    <PrefsContext.Provider value={{ lang, theme, setLang: chooseLang, setTheme }}>
+    <PrefsContext.Provider value={{ lang, theme, downloadHref, setLang: chooseLang, setTheme }}>
       {!dma && <header className="bar">
         <div className="bar-inner">
           <Link href={localeHref(lang, '/')} className="brand" onClick={() => setOpen(false)}>
@@ -238,7 +240,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
                 <MoonIcon />
               </span>
             </button>
-            <a className="btn btn-primary win" href="/download">
+            <a className="btn btn-primary win" href={downloadHref}>
               <WindowsIcon />
               {copy.nav.download}
             </a>
@@ -252,7 +254,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
                 {copy.campaign.ribbon} <strong>{formatLaunchFreeDate(lang, campaign.until)}</strong>
               </p>
               <Countdown until={campaign.until} labels={copy.campaign} tone="compact" />
-              <a className="ribbon-link" href="/download">
+              <a className="ribbon-link" href={downloadHref}>
                 {copy.campaign.ribbonCta}
                 <span aria-hidden> →</span>
               </a>
