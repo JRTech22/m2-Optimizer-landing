@@ -41,7 +41,7 @@ export function DmaVersions() {
       <section className="card dma-card">
         <h2>Enlaces fijos</h2>
         <p>Feed: <button className="linkish" type="button" onClick={() => void copy(data.feedUrl)}>{data.feedUrl}</button></p>
-        <p>App Installer: <button className="linkish" type="button" onClick={() => void copy(data.appInstallerUrl)}>{data.appInstallerUrl}</button></p>
+        <p>Descarga: <button className="linkish" type="button" onClick={() => void copy(data.downloadUrl)}>{data.downloadUrl}</button></p>
       </section>
       <section className="card dma-card">
         <h2>Últimas 5 versiones</h2>

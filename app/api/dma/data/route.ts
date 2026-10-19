@@ -1,5 +1,5 @@
 import { dmaOpen } from '@/server/dma'
-import { APP_INSTALLER_URL, keepLatestVersions, listDevices, listLicenses, listPromos, readCatalog, trimCatalog, versionedUrl } from '@/server/store'
+import { DOWNLOAD_URL, keepLatestVersions, listDevices, listLicenses, listPromos, readCatalog, trimCatalog, versionedUrl } from '@/server/store'
 
 export async function GET() {
   if (!(await dmaOpen())) return Response.json({ error: 'Sesión caducada' }, { status: 401 })
@@ -17,7 +17,7 @@ export async function GET() {
       catalog,
       storeUrl: catalog.version ? versionedUrl(catalog.version) : '',
       feedUrl: 'https://optimizer.m2dominicanrd.com/api/store',
-      appInstallerUrl: APP_INSTALLER_URL,
+      downloadUrl: DOWNLOAD_URL,
       licenses: licenses.map((item) => ({
         email: item.email,
         tier: item.tier,

@@ -135,7 +135,23 @@ export async function touchDevice(fingerprint: string, version: string): Promise
 const RELEASE_DOC = 'wlRcYzT17u74kyFtKlGy'
 const DMA_DOC = '8tsjnErktPZKN5p7kgI4'
 export const SITE_ORIGIN = 'https://optimizer.m2dominicanrd.com'
+export const DOWNLOAD_URL = `${SITE_ORIGIN}/download`
 export const APP_INSTALLER_URL = `${SITE_ORIGIN}/M2Optimizer.appinstaller`
+
+/** Turns a Drive share/view link into a direct download. Leaves other URLs alone. */
+export function directFileUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+    if (host !== 'drive.google.com' && host !== 'drive.usercontent.google.com') return url
+    const fromPath = parsed.pathname.match(/\/(?:file\/d|uc\/d|d)\/([^/]+)/)?.[1]
+    const id = parsed.searchParams.get('id') || fromPath
+    if (!id) return url
+    return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`
+  } catch {
+    return url
+  }
+}
 
 export interface VersionEntry {
   version: string

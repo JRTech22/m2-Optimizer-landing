@@ -43,8 +43,8 @@ export function DmaHome() {
       <section className="dma-panel dma-release">
         <div>
           <p className="dma-kicker">Descarga pública</p>
-          <h2>App Installer</h2>
-          <button className="dma-url" type="button" onClick={() => void copy(data.appInstallerUrl)}>{data.appInstallerUrl}</button>
+          <h2>Google Drive</h2>
+          <button className="dma-url" type="button" onClick={() => void copy(data.downloadUrl)}>{data.downloadUrl}</button>
         </div>
         <div className="dma-actions">
           <Link className="btn btn-primary" href="/dma/versiones">Publicar</Link>
@@ -66,7 +66,7 @@ export function DmaHome() {
         <section className="dma-panel dma-insight dma-insight-wide">
           <p className="dma-kicker">URL versionada</p>
           <button className="dma-url" type="button" onClick={() => void copy(data.storeUrl)}>{data.storeUrl || 'Sin versión publicada'}</button>
-          <span>La usa Microsoft Store. El archivo sigue en Drive.</span>
+          <span>Redirige al instalador .exe en Drive.</span>
         </section>
       </div>
     </div>

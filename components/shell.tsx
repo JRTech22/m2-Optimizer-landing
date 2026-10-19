@@ -19,7 +19,7 @@ interface Prefs {
 const PrefsContext = createContext<Prefs>({
   lang: 'es',
   theme: 'dark',
-  downloadHref: 'https://optimizer.m2dominicanrd.com/M2Optimizer.appinstaller',
+  downloadHref: 'https://optimizer.m2dominicanrd.com/download',
   setLang: () => undefined,
   setTheme: () => undefined,
 })

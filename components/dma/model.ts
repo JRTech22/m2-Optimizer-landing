@@ -41,7 +41,7 @@ export interface AdminData {
   catalog: Catalog
   storeUrl: string
   feedUrl: string
-  appInstallerUrl: string
+  downloadUrl: string
   licenses: LicenseRow[]
   devices: DeviceRow[]
   promos: PromoRow[]

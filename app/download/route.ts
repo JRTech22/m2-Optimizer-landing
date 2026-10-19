@@ -1,10 +1,12 @@
 import { options } from '@/server/http'
-import { APP_INSTALLER_URL } from '@/server/store'
+import { directFileUrl, readCatalog } from '@/server/store'
 
 export function OPTIONS() {
   return options()
 }
 
-export function GET() {
-  return Response.redirect(APP_INSTALLER_URL, 302)
+export async function GET() {
+  const catalog = await readCatalog().catch(() => null)
+  if (!catalog?.url) return new Response('Not found', { status: 404 })
+  return Response.redirect(directFileUrl(catalog.url), 302)
 }
